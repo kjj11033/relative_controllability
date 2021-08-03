@@ -11,7 +11,7 @@ function [pvec, pstruct] = tapas_controllability_vol_bias2_LR_transp(r, ptrans)
 pvec    = NaN(1,length(ptrans));
 pstruct = struct;
 
-l = r.c_prc.n_levels;
+l = 3;%r.c_prc.n_levels;
 
 pvec(1:l)         = ptrans(1:l);                           % mu_0
 pstruct.mu_0      = pvec(1:l);

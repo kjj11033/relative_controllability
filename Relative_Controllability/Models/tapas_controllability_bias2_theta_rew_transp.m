@@ -1,4 +1,4 @@
-function [pvec, pstruct] = tapas_controllability_self_only_LR_transp(r, ptrans)
+function [pvec, pstruct] = tapas_controllability_bias2_theta_rew_transp(r, ptrans)
 % --------------------------------------------------------------------------------------------------
 % Copyright (C) 2012-2013 Christoph Mathys, TNU, UZH & ETHZ
 %
@@ -15,8 +15,17 @@ l = 2;
 
 pvec(1:l)         = tapas_sgm(ptrans(1:l),1);              % mu_0, % sigmoid transform
 pstruct.mu_0      = pvec(1:l);
-pvec(l+1:2*l-1)     = tapas_sgm(ptrans(l+1:2*l-1),1);                  % sa_0
-pstruct.alpha     = pvec(l+1:2*l-1);
+pvec(l+1:2*l)     = tapas_sgm(ptrans(l+1:2*l),1);                  % sa_0
+pstruct.alpha     = pvec(l+1:2*l);
 pvec(2*l+1)       = tapas_sgm(ptrans(2*l+1),1);                  % sa_0
 pstruct.theta     = pvec(2*l+1);
+pvec(2*l+2)       = exp(ptrans(2*l+2));                  % sa_0
+pstruct.selc      = pvec(2*l+2);
+pvec(2*l+3)       = exp(ptrans(2*l+3));                  % sa_0
+pstruct.selw      = pvec(2*l+3);
+pvec(2*l+4)       = tapas_sgm(ptrans(2*l+4),1);                  % sa_0
+pstruct.theta_rew = pvec(2*l+4);
+
+
+
 return;

@@ -34,7 +34,7 @@ mu_0 = p(1:l);
 % alpha_self = tapas_sgm(p(l+1),1);
 % alpha_other = tapas_sgm(p(2*l),1);
 alpha_self =p(l+1);
-theta= p(2*l);
+theta= p(2*l+1);
 % fprintf('self bias is %d \n\n',self_bias);
 % Add dummy "zeroth" trial
 % Task-Generated inputs
@@ -72,8 +72,9 @@ ctr_mu(1) = 0.5; % initial belief of p(feedback|my choice)
 for k = 2:1:n
     if not(ismember(k-1, r.ign))
 
-        ctr_muhat(k,:) = ctr_mu(k-1,:)+theta*(1/2-ctr_mu(k-1,:)); % considers drift         
+        ctr_muhat(k,:) = ctr_mu(k-1,:)+theta*(1/2-ctr_mu(k-1,:)); % considers drift        
         muhat(k,:) = mu(k-1,:);
+        
        %% ==========  Update controllability based on posterior=========
         % Update belief of participant
         if feedback(k) == 1            
@@ -82,11 +83,9 @@ for k = 2:1:n
         elseif feedback(k) == -1
            rew_PE(k,1) = (1-u_self(k))-muhat(k,1);
            rew_PE(k,2) = (1-u_other(k))-muhat(k,2);
-        end
-
+        end        
         mu(k,:) = muhat(k,:) + [alpha_self*ctr_muhat(k,1) 0].*rew_PE(k,:);
         ctr_mu(k) = abs(mu(k,1)-1/2)*2;
-
     else
         mu(k,:) = mu(k-1,:);         
         muhat(k,:) = muhat(k-1,:);
@@ -97,7 +96,7 @@ for k = 2:1:n
 end
 
 % Check validity of trajectories
-if any(isnan(mu(:)))
+if any(isnan(mu(:,1)))
     error('tapas:hgf:VarApproxInvalid', 'Variational approximation invalid. Parameters are in a region where model assumptions are violated.');
 else
     % Check for implausible jumps in trajectories

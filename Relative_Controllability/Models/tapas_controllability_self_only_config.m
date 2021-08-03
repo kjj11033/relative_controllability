@@ -128,8 +128,11 @@ c.mu_0sa = [0, 0];
 % Format: row vector of length n_levels.
 % Undefined (therefore NaN) at the first level.
 % Fix this to zero to turn off drift.
-c.alpha_self_mu = -1;
-c.alpha_self_sa = 2;
+% c.alpha_self_mu = -1;
+% c.alpha_self_sa = 2;
+c.alpha_self_mu = [-1, NaN];
+c.alpha_self_sa = [2, NaN];
+
 
 % Regularizer
 c.theta_mu = 0;

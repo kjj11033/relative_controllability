@@ -1,4 +1,4 @@
-function [traj, infStates] = tapas_controllability_self_only(r, p, varargin)
+function [traj, infStates] = tapas_controllability_lrbias2(r, p, varargin)
 % Calculates the trajectories of the agent's representations under the HGF
 %
 % This function can be called in two ways:
@@ -23,7 +23,7 @@ function [traj, infStates] = tapas_controllability_self_only(r, p, varargin)
 
 % Transform paramaters back to their native space if needed
 if ~isempty(varargin) && strcmp(varargin{1},'trans');
-    p = tapas_controllability_self_only_transp(r, p);
+    p = tapas_controllability_bias2_theta_rew_transp(r, p);
 end
 
 % Number of levels
@@ -31,17 +31,26 @@ l = 2; % self and other
 
 % Unpack parameters
 mu_0 = p(1:l);
-alpha_self =p(l+1);
+alpha_self = tapas_logit(p(l+1),1);
+alpha_other = p(2*l);
+
 theta= p(2*l+1);
 
-% fprintf('self bias is %d \n\n',self_bias);
+self_bias_c = p(2*l+2);
+self_bias_w = p(2*l+3);%disp(p)
+
+alpha_mod = p(2*l+4);
+
 % Add dummy "zeroth" trial
 % Task-Generated inputs
 feedback = [0; r.u(:,1)]; % feedback generated from the task
 u_other = [0; r.u(:,2)]; % participants' choice, right = 1, left = 0
+ctr_ind = [0; r.u(:,3)]; %controllability question index
 
 % Real response data of participants
 u_self = [0; r.y(:,1)]; % participants' choice, right = 1, left = 0
+
+
 
 % Number of trials (including prior)
 n = length(u_self);
@@ -70,22 +79,34 @@ ctr_mu(1) = 0.5; % initial belief of p(feedback|my choice)
 % Pass through representation update loop
 for k = 2:1:n
     if not(ismember(k-1, r.ign))
-
         ctr_muhat(k,:) = ctr_mu(k-1,:)+theta*(1/2-ctr_mu(k-1,:)); % considers drift         
-        muhat(k,:) = mu(k-1,:);
+        muhat(k,:) = mu(k-1,:);       
        %% ==========  Update controllability based on posterior=========
         % Update belief of participant
         if feedback(k) == 1            
            rew_PE(k,1) = u_self(k)-muhat(k,1);
            rew_PE(k,2) = u_other(k)-muhat(k,2);
+           mu(k,:) = muhat(k,:) + [tapas_sgm(alpha_self+alpha_mod,1) alpha_other].*rew_PE(k,:); %*(1-ctr_muhat(k))           
         elseif feedback(k) == -1
            rew_PE(k,1) = (1-u_self(k))-muhat(k,1);
            rew_PE(k,2) = (1-u_other(k))-muhat(k,2);
+           mu(k,:) = muhat(k,:) + [tapas_sgm(alpha_self alpha_other].*rew_PE(k,:); %*(1-ctr_muhat(k))           
         end
-
-        mu(k,:) = muhat(k,:) + [alpha_self 0].*rew_PE(k,:);
-        ctr_mu(k) = abs(mu(k,1)-1/2)*2; % = mu - (1-mu)
-
+        
+%         mu(k,:) = muhat(k,:) + [alpha_self alpha_other].*tapas_sgm([ctr_muhat(k) 1-ctr_muhat(k)],1).*rew_PE(k,:);
+        
+        
+        
+        % calculate likelihood of feedback given current feedback and choice
+        z=(feedback(k)==1);
+        lik_mine=(abs(u_self(k)-(1-mu(k,1)))^z)*(abs(u_self(k)-mu(k,1))^(1-z));
+        lik_other=(abs(u_other(k)-(1-mu(k,2)))^z)*(abs(u_other(k)-(mu(k,2)))^(1-z));
+        % calculate posterior controllability        
+        if feedback(k) == 1            
+            ctr_mu(k) = (self_bias_c*lik_mine*ctr_muhat(k))/(self_bias_c*lik_mine*ctr_muhat(k)+lik_other*(1-ctr_muhat(k)));
+        elseif feedback(k) == -1
+            ctr_mu(k) = (self_bias_w*lik_mine*ctr_muhat(k))/(self_bias_w*lik_mine*ctr_muhat(k)+lik_other*(1-ctr_muhat(k)));
+        end
     else
         mu(k,:) = mu(k-1,:);         
         muhat(k,:) = muhat(k-1,:);
@@ -96,7 +117,7 @@ for k = 2:1:n
 end
 
 % Check validity of trajectories
-if any(isnan(mu(:,1)))
+if any(isnan(mu(:)))
     error('tapas:hgf:VarApproxInvalid', 'Variational approximation invalid. Parameters are in a region where model assumptions are violated.');
 else
     % Check for implausible jumps in trajectories

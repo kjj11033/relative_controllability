@@ -2,18 +2,25 @@ function r = optim(r, prc_fun, obs_fun, opt_algo)
 
 % Use means of priors as starting values for optimization for optimized parameters (and as values
 % for fixed parameters)
-init = [r.c_prc.priormus, r.c_obs.priormus]; 
+init = [r.c_prc.priormus, r.c_obs.priormus]; % ¸ğµç prior parameter ÀÇ mu(log sa µµ Æ÷ÇÔ sigma>0 ÀÌ¾î¾ß ÇÏ¹Ç·Î), 
+%rho (¹ºÁö ¸ğ¸£Áö¸¸ ÇöÀç ÇÊ¿ä ¾øÀ½), kappa, omega
+% level = 3 ·Î default ÀÌ¸ç omega ÀÇ level 1 Àº NaN, 3 Àº theta ¿¡ ÇØ´çÇÑ´Ù, ¶ÇÇÑ ¸ğµç
+% °æ¿ì¿¡¼­ level 1Àº deterministic ÇÏ¹Ç·Î (level 2¿¡ ÀÇÇØ °áÁ¤), mean/std °¡ NaN À¸·Î Á¤ÀÇ
+
+% Determine indices of parameters to optimize (i.e., those that are not fixed or NaN)
+% ¾î¶² parameter ¸¦ free ·Î µÑ °ÍÀÎ°¡? ±âº»ÀûÀ¸·Î´Â omega (2) ¹× zeta(response model) ¸¸ free·Î µÎ´Âµí
 opt_idx = [r.c_prc.priorsas, r.c_obs.priorsas];
 opt_idx(isnan(opt_idx)) = 0;
-opt_idx = find(opt_idx); % free parameter ì˜ index
+opt_idx = find(opt_idx); % free parameter ÀÇ index
 
 % Number of perceptual and observation parameters 
-% perceptual, observational model ê°ê°ì˜ íŒŒë¼ë¯¸í„° ê°¯ìˆ˜
+% perceptual, observational model °¢°¢ÀÇ ÆÄ¶ó¹ÌÅÍ °¹¼ö
 n_prcpars = length(r.c_prc.priormus);
 n_obspars = length(r.c_obs.priormus);
 
 % Construct the objective function to be MINIMIZED:
 % The negative log-joint as a function of a single parameter vector
+% Objective function À» Á¤ÀÇÇÏ°í, function handle À» ¸¸µç´Ù nlj(p) ÇüÅÂ·Î »ç¿ëÇÒ ¼ö ÀÖ´Ù.
 nlj = @(p) [negLogJoint(r, prc_fun, obs_fun, p(1:n_prcpars), p(n_prcpars+1:n_prcpars+n_obspars))];
 
 % Check whether priors are in a region where the objective function can be evaluated
@@ -24,16 +31,23 @@ end
 
 % The objective function is now the negative log joint restricted
 % with respect to the parameters that are not optimized
-
+% Obj fx ÀÎ nlj ¸¦ free parameter (¿À¸Ş°¡, Á¦Å¸) ¸¦ Á¦¿ÜÇÑ ³ª¸ÓÁö parameter ¸¦
+% °íÁ¤ÇÑ »óÅÂ·Î ±¸ÇÏ´Â function handle À» ¸¸µç´Ù
 obj_fun = @(p_opt) restrictfun(nlj, init, opt_idx, p_opt); %  restrictfun(nlj, init, opt_idx, init(opt_idx)');
 
+% Optimize À§ÀÇ function handle µéÀ» ÀÌ¿ëÇÏ¿©, restricted nlj ¸¦  optimize ÇÑ´Ù
+% ¹æ¹ıÀº Quasi_Newton À¸·Î
+% ÀÌ¸¦ À§ÇØ¼­´Â restricted nlj ¸¦ ±¸ÇÏ´Â function handle, free parameter,
+% optimization ¿¡ ´ëÇÑ option (r.c_opt) ÀÌ ÇÊ¿äÇÏ´Ù.
 disp(' ')
 disp('Optimizing...')
-r.optim = opt_algo(obj_fun, init(opt_idx)', r.c_opt); % restrictfun ì— ì˜í•´ì„œ 
+r.optim = opt_algo(obj_fun, init(opt_idx)', r.c_opt); % restrictfun ¿¡ ÀÇÇØ¼­ 
+% °¡¿îµ¥ÀÇ init param Áß init(opt_idx)' ºÎºĞ¸¸ °è¼Ó ¹Ù²î¾î¼­ (tapas_quasi_newton ¿¡¼­) 
+% optimization µÇ°Ô µÈ´Ù
 
 % Replace optimized values in init with arg min values
 final = init;
-final(opt_idx) = r.optim.argMin'; % init ì¤‘ì—ì„œ optimization ëœ free parameter ë§Œ replace
+final(opt_idx) = r.optim.argMin'; % init Áß¿¡¼­ optimization µÈ free parameter ¸¸ replace
 r.optim.final = final;
 
 % Get the negative log-joint and negative log-likelihood

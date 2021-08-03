@@ -17,6 +17,6 @@ pvec(1:l)         = tapas_sgm(ptrans(1:l),1);              % mu_0, % sigmoid tra
 pstruct.mu_0      = pvec(1:l);
 pvec(l+1:2*l-1)     = tapas_sgm(ptrans(l+1:2*l-1),1);                  % sa_0
 pstruct.alpha     = pvec(l+1:2*l-1);
-pvec(2*l)       = tapas_sgm(ptrans(2*l),1);                  % sa_0
-pstruct.theta     = pvec(2*l);
+pvec(2*l+1)       = tapas_sgm(ptrans(2*l+1),1);                  % sa_0
+pstruct.theta     = pvec(2*l+1);
 return;

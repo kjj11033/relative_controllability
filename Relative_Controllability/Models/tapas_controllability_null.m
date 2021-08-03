@@ -93,7 +93,7 @@ for k = 2:1:n
 end
 
 % Check validity of trajectories
-if any(isnan(mu(:)))
+if any(isnan(mu(:,1)))
     error('tapas:hgf:VarApproxInvalid', 'Variational approximation invalid. Parameters are in a region where model assumptions are violated.');
 else
     % Check for implausible jumps in trajectories

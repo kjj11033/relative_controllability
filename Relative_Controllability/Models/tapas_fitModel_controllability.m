@@ -241,6 +241,8 @@ end
 r.y  = responses; % participants' choice, controllability choice
 r.u  = inputs; % task-generated feedback, other's choice, controllability trial index
 
+% r.u(1,:)
+
 % Determine ignored trials
 ign = [];
 for k = 1:size(r.u,1)
@@ -386,6 +388,7 @@ if any(isinf(H(:))) || any(isnan(H(:))) || any(eig(H)<=0)
 else
     % Parameter covariance
     Sigma = inv(H);
+    Sigma = (Sigma' + Sigma)./2;
     % Parameter correlation
     Corr = tapas_Cov2Corr(Sigma);
     % Log-model evidence ~ negative variational free energy

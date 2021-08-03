@@ -1,4 +1,4 @@
-function c = tapas_controllability_self_only_LR_config
+function c = tapas_controllability_bias2_notheta_config
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % Contains the configuration for the Hierarchical Gaussian Filter (HGF)
@@ -98,7 +98,7 @@ function c = tapas_controllability_self_only_LR_config
 c = struct;
 
 % Model name
-c.model = 'tapas_controllability_self_only_LR';
+c.model = 'tapas_controllability_bias2_notheta';
 
 % Number of levels (minimum: 3)
 c.n_levels = 2;
@@ -124,28 +124,38 @@ c.mu_0sa = [0, 0];
 % c.logsa_0mu = [log(0.1), log(1)];
 % c.logsa_0sa = [0,      0];
 
-% alpha_self
+% alpha_self_other
 % Format: row vector of length n_levels.
 % Undefined (therefore NaN) at the first level.
 % Fix this to zero to turn off drift.
-c.alpha_self_mu = [-1, NaN];
-c.alpha_self_sa = [2, NaN];
+c.alpha_self_other_mu = [-1, -1];
+c.alpha_self_other_sa = [2, 2];
 
 % Regularizer
-c.theta_mu = 0;
-c.theta_sa = 0;
+c.theta_mu = nan;
+c.theta_sa = nan;
+
+% Self-Other bias
+c.self_bias_cmu = 0;
+c.self_bias_csa = 1;
+c.self_bias_wmu = 0;
+c.self_bias_wsa = 1;
 
 % Gather prior settings in vectors
 c.priormus = [
     c.mu_0mu,...    
-    c.alpha_self_mu,...
+    c.alpha_self_other_mu,...
     c.theta_mu,...
+    c.self_bias_cmu,...
+    c.self_bias_wmu,...    
          ];
 
 c.priorsas = [
     c.mu_0sa,...
-    c.alpha_self_sa,...
+    c.alpha_self_other_sa,...
     c.theta_sa,...
+    c.self_bias_csa,...
+    c.self_bias_wsa,...    
          ];
 
 % Check whether we have the right number of priors
@@ -155,10 +165,10 @@ c.priorsas = [
 % end
 
 % Model function handle
-c.prc_fun = @tapas_controllability_self_only_LR;
+c.prc_fun = @tapas_controllability_bias2_notheta;
 
 % Handle to function that transforms perceptual parameters to their native space
 % from the space they are estimated in
-c.transp_prc_fun = @tapas_controllability_self_only_LR_transp;
+c.transp_prc_fun = @tapas_controllability_bias2_notheta_transp;
 
 return;
